@@ -1,5 +1,13 @@
 #include "game.hpp"
 
+Layer::Layer() = default;
+Layer::~Layer() = default;
+
+int Layer::onInit() {return 0;};
+void Layer::onCleanup() {};
+void Layer::onTick() {};
+void Layer::onDraw() {};
+
 Game::Game() = default;
 Game::~Game() = default;
 
@@ -7,7 +15,7 @@ SDL_Window* Game::m_Window = nullptr;
 SDL_GLContext Game::m_Context = {};
 SDL_Event Game::m_Event = {};
 bool Game::m_Quit = false;
-std::vector<Layer> Game::m_Layers = {};
+std::vector<LayerPtr> Game::m_Layers = {};
 
 int Game::init()
 {
@@ -69,17 +77,64 @@ int Game::init()
 
     glViewport(0, 0, glb::WINDOW_WIDTH, glb::WINDOW_HEIGHT);
 
-    return 0;
+    int result = 0;
+    for (auto& layer : m_Layers)
+    {
+        Layer* ptr = layer.get();
+        if (ptr)
+        {
+            int r = ptr->onInit();
+            if (r != 0)
+            {
+                result = r;
+            }
+        }
+    }
+
+    return result;
 }
 
 void Game::cleanup()
 {
+    for (auto& layer : m_Layers)
+    {
+        Layer* ptr = layer.get();
+        if (ptr)
+        {
+            ptr->onCleanup();
+        }
+    }
+
     SDL_GL_DeleteContext(m_Context);
     SDL_DestroyWindow(m_Window);
     Mix_Quit();
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
+}
+
+void Game::tick()
+{
+    for (auto& layer : m_Layers)
+    {
+        Layer* ptr = layer.get();
+        if (ptr)
+        {
+            ptr->onTick();
+        }
+    }
+}
+
+void Game::draw()
+{
+    for (auto& layer : m_Layers)
+    {
+        Layer* ptr = layer.get();
+        if (ptr)
+        {
+            ptr->onDraw();
+        }
+    }
 }
 
 void Game::frame()
@@ -100,8 +155,12 @@ void Game::frame()
         }
     }
 
+    tick();
+
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    draw();
 
     SDL_GL_SwapWindow(m_Window);
 

@@ -54,6 +54,7 @@
         "typeindex": "cpp",
         "new": "cpp",
         "condition_variable": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "set": "cpp"
     }
 }
