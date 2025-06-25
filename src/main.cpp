@@ -42,7 +42,13 @@ struct PlaceHolderEntity : public Entity
     ~PlaceHolderEntity() override = default;
 
     void onCreate(ECS* ecs) override {}
-    void onDestroy(ECS* ecs) override {}
+    void onDestroy(ECS* ecs) override 
+    {
+        for (auto component : components)
+        {
+            ecs->removeComponent(id, component);
+        }
+    }
 
     void onAdd(ECS* ecs, ComponentID component) override 
     {
@@ -70,7 +76,29 @@ struct PlaceHolderEntity : public Entity
 
 struct ShaderComponent : public Component
 {
+    ShaderComponent(
+        ComponentID id,
+        const std::string& vertexSrc,
+        const std::string& fragmentSrc
+    ) : Component(id), vertexSrc(vertexSrc), fragmentSrc(fragmentSrc) {}
+    ~ShaderComponent() override = default;
 
+    void onAdd(ECS* ecs, EntityID entity) override 
+    {
+        
+    }
+    void onRemove(ECS* ecs, EntityID entity) override 
+    {
+        glDeleteProgram(program);
+        glDeleteShader(vertex);
+        glDeleteShader(fragment);
+    }
+
+    std::string vertexSrc;
+    std::string fragmentSrc;
+    GLuint vertex;
+    GLuint fragment;
+    GLuint program;
 };
 
 enum class MeshType
