@@ -13,34 +13,10 @@
 
 #include "ecs.hpp"
 
-struct TestEntity : public Entity
+enum class SystemType
 {
-    TestEntity(EntityID id) : Entity(id) {}
-    virtual ~TestEntity() {}
-
-    void onCreate(ECS* ecs) override 
-    {
-        std::cout << "Created test entity! at id: {" << id.first.name() << ", " << id.second << "}" << std::endl;
-    }
-    void onDestroy(ECS* ecs) override 
-    {
-        std::cout << "Destroyed test entity! at id: {" << id.first.name() << ", " << id.second << "}" << std::endl;
-    }
-};
-
-struct TestComponent : public Component
-{
-    TestComponent(ComponentID id) : Component(id) {}
-    virtual ~TestComponent() {}
-
-    void onAdd(ECS* ecs, EntityID entity) override 
-    {
-        std::cout << "Added test component! to entity: {" << entity.first.name() << ", " << entity.second << "} at index: {" << id.first.name() << ", " << id.second << "}" << std::endl;
-    }
-    void onRemove(ECS* ecs, EntityID entity) override 
-    {
-        std::cout << "Removed test component! to entity: {" << entity.first.name() << ", " << entity.second << "} at index: {" << id.first.name() << ", " << id.second << "}" << std::endl;
-    }
+    TICK,
+    DRAW
 };
 
 struct glb_t
@@ -74,26 +50,6 @@ void init()
         glb.WINDOW_WIDTH, glb.WINDOW_HEIGHT,
         SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
     );
-
-    glb.context = SDL_GL_CreateContext(glb.window);
-    glViewport(0, 0, glb.WINDOW_WIDTH, glb.WINDOW_HEIGHT);
-
-    EntityID e = glb.ecs.createEntity<TestEntity>();
-    std::cout << glb.ecs.hasEntity(e) << std::endl;
-    TestEntity* ep = glb.ecs.getEntity<TestEntity>(e);
-    std::cout << ep << std::endl;
-    ComponentID c = glb.ecs.addComponent<TestComponent>(e);
-    std::cout << glb.ecs.hasComponent(e, c) << std::endl;
-    TestComponent* cp = glb.ecs.getComponent<TestComponent>(e, c);
-    std::cout << cp << std::endl;
-    glb.ecs.removeComponent(e, c);
-    std::cout << glb.ecs.hasComponent(e, c) << std::endl;
-    cp = glb.ecs.getComponent<TestComponent>(e, c);
-    std::cout << (cp == nullptr) << std::endl;
-    glb.ecs.destroyEntity(e);
-    std::cout << glb.ecs.hasEntity(e) << std::endl;
-    ep = glb.ecs.getEntity<TestEntity>(e);
-    std::cout << (ep == nullptr) << std::endl;
 }
 
 void cleanup()
@@ -118,6 +74,11 @@ void loop()
                 glb.quit = true;
                 break;
             }
+            case SDL_KEYDOWN:
+            {
+                glb.quit = true;
+                break;
+            }
             default:
             {
                 break;
@@ -125,8 +86,12 @@ void loop()
         }
     }
 
+    glb.ecs.applySystems(SystemType::TICK);
+
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    glb.ecs.applySystems(SystemType::DRAW);
 
     SDL_GL_SwapWindow(glb.window);
 

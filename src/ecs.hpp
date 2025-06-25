@@ -248,7 +248,7 @@ struct ECS
     template<typename T, typename U = SystemData, typename... Args>
     SystemID addSystem(Args&&... args)
     {
-        SystemID systemID;
+        SystemID systemID = {typeid(T), -1};
         {
             std::type_index typeID = typeid(T);
             unsigned int intID = -1;
@@ -277,9 +277,9 @@ struct ECS
             systemID = {typeID, intID};
         }
 
-        SystemDataID dataID;
+        SystemDataID dataID = {typeid(U), -1};
         {
-            std::type_index typeID = typeid(T);
+            std::type_index typeID = typeid(U);
             unsigned int intID = -1;
             for (unsigned int i = 0; i < MAX_SYSTEM_DATA; i++)
             {
@@ -308,7 +308,7 @@ struct ECS
 
         if (systemID.second == -1)
         {
-            std::Cout << "Failed to add system!" << std::endl;
+            std::cout << "Failed to add system!" << std::endl;
         } else
         {
             SystemPtr systemPtr = SystemPtr(new T(systemID, dataID));
@@ -346,6 +346,71 @@ struct ECS
             return true;
         }
         return false;
+    }
+
+    template<typename T>
+    T* getSystem(SystemID system)
+    {
+        if (hasSystem(system))
+        {
+            return reinterpret_cast<T*>(systems[system].get());
+        }
+        return nullptr;
+    }
+
+    template<typename T>
+    T* getSystemData(SystemDataID data)
+    {
+        if (hasSystemData(data))
+        {
+            return reinterpret_cast<T*>(systemData[data].get());
+        }
+        return nullptr;
+    }
+
+    void removeSystem(SystemID system)
+    {
+        if (hasSystem(system))
+        {
+            if (hasSystemData(systems[system].get()->data))
+            {
+                systemData.erase(systems[system].get()->data);
+            }
+            systems[system].get()->onRemove(this);
+            systems.erase(system);
+        }
+    }
+
+    void applySystem(SystemID system, EntityID entity)
+    {
+        if (hasEntity(entity) && hasSystem(system))
+        {
+            systems[system].get()->onApply(this, entity);
+        }
+    }
+
+    void applySystems(SystemType type)
+    {
+        std::vector<System*> vSystems;
+        for (auto& i : systems)
+        {
+            if (!i.second.get())
+            {
+                continue;
+            }
+            if (i.second.get()->type == type)
+            {
+                vSystems.push_back(i.second.get());
+            }
+        }
+
+        for (auto j : vSystems)
+        {
+            for (auto& entity : entities)
+            {
+                j->onApply(this, entity.first);
+            }
+        }
     }
 
     const int MAX_ENTITIES = 1024;
