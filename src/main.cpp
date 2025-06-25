@@ -31,7 +31,101 @@ struct glb_t
     bool quit = false;
 
     ECS ecs;
+
+    EntityID shaderPlaceHolder;
+    EntityID meshPlaceHolder;
 } glb;
+
+struct PlaceHolderEntity : public Entity
+{
+    PlaceHolderEntity(EntityID id) : Entity(id) {}
+    ~PlaceHolderEntity() override = default;
+
+    void onCreate(ECS* ecs) override {}
+    void onDestroy(ECS* ecs) override {}
+
+    void onAdd(ECS* ecs, ComponentID component) override 
+    {
+        components.push_back(component);
+    }
+
+    void onRemove(ECS* ecs, ComponentID component) override
+    {
+        auto i = std::find(components.begin(), components.end(), component);
+        components.erase(i);
+    }
+
+    ComponentID& operator[](size_t i)
+    {
+        return components[i];
+    }
+
+    const ComponentID& operator[](size_t i) const
+    {
+        return components[i];
+    }
+
+    std::vector<ComponentID> components;
+};
+
+struct ShaderComponent : public Component
+{
+
+};
+
+enum class MeshType
+{    
+    STATIC
+};
+
+struct MeshComponent : public Component
+{
+    MeshComponent(
+        ComponentID id,
+        MeshType type, 
+        std::vector<GLfloat> vertices,
+        std::vector<GLuint> elements,
+        std::vector<std::pair<GLuint, GLint>> attributes
+    ) : Component(id),
+        type(type), vertices(vertices), elements(elements), attributes(attributes) {}
+    ~MeshComponent() override = default;
+
+    void onAdd(ECS* ecs, EntityID entity) override 
+    {
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+
+        switch (type)
+        {
+            case MeshType::STATIC:
+            {
+                glGenBuffers(1, &vbo);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
+
+                glGenBuffers(1, &ebo);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements.size() * sizeof(GLuint), elements.data(), GL_STATIC_DRAW);
+            }
+        }
+
+        glBindVertexArray(0);
+    }
+    void onRemove(ECS* ecs, EntityID entity) override 
+    {
+        glDeleteBuffers(1, &ebo);
+        glDeleteBuffers(1, &vbo);
+        glDeleteVertexArrays(1, &vao);
+    }
+
+    MeshType type;
+    std::vector<GLfloat> vertices;
+    std::vector<GLuint> elements;
+    std::vector<std::pair<GLuint, GLint>> attributes;
+    GLuint vao = 0;
+    GLuint vbo = 0;
+    GLuint ebo = 0;    
+};
 
 void init()
 {
@@ -50,6 +144,12 @@ void init()
         glb.WINDOW_WIDTH, glb.WINDOW_HEIGHT,
         SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
     );
+
+    glb.context = SDL_GL_CreateContext(glb.window);
+    glViewport(0, 0, glb.WINDOW_WIDTH, glb.WINDOW_HEIGHT);
+
+    glb.shaderPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity>();
+    glb.meshPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity>();
 }
 
 void cleanup()

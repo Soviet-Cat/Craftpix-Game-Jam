@@ -3,6 +3,8 @@
 Entity::~Entity() = default;
 void Entity::onCreate(ECS* ecs) {}
 void Entity::onDestroy(ECS* ecs) {}
+void Entity::onAdd(ECS* ecs, ComponentID component) {}
+void Entity::onRemove(ECS* ecs, ComponentID component) {}
 
 Component::~Component() = default;
 void Component::onAdd(ECS* ecs, EntityID entity) {}

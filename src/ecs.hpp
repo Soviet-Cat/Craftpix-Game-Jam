@@ -12,10 +12,32 @@ enum class SystemType;
 struct System;
 struct SystemData;
 
-using EntityID = std::pair<std::type_index, unsigned int>;
-using ComponentID = std::pair<std::type_index, unsigned int>;
-using SystemID = std::pair<std::type_index, unsigned int>;
-using SystemDataID = std::pair<std::type_index, unsigned int>;
+struct ID
+{
+    std::type_index first;
+    unsigned int second;
+
+    ID() : first(typeid(void)), second(static_cast<unsigned int>(-1)) {}
+    ID(std::type_index first, unsigned int second) 
+        : first(first), second(second) {}
+    ID(std::type_index first, int second) 
+        : first(first), second(static_cast<unsigned int>(second)) {}
+
+    bool operator<(const ID& other) const 
+    {
+        return (first < other.first) || (first == other.first && second < other.second);
+    }
+
+    bool operator==(const ID& other) const
+    {
+        return first == other.first && second == other.second;
+    }
+};
+
+using EntityID = ID;
+using ComponentID = ID;
+using SystemID = ID;
+using SystemDataID = ID;
 
 using EntityPtr = std::unique_ptr<Entity>;
 using ComponentPtr = std::unique_ptr<Component>;
@@ -34,6 +56,9 @@ struct Entity
 
     virtual void onCreate(ECS* ecs) = 0;
     virtual void onDestroy(ECS* ecs) = 0;
+
+    virtual void onAdd(ECS* ecs, ComponentID component) = 0;
+    virtual void onRemove(ECS* ecs, ComponentID component) = 0;
 
     EntityID id;
 };
@@ -194,6 +219,7 @@ struct ECS
             ComponentPtr componentPtr = ComponentPtr(new T(componentID, std::forward<Args>(args)...));
             components[entity][componentID] = std::move(componentPtr);
             components[entity][componentID].get()->onAdd(this, entity);
+            entities[entity].get()->onAdd(this, componentID);
         }
         return componentID;
     }
@@ -241,6 +267,7 @@ struct ECS
         if (hasComponent(entity, component))
         {
             components[entity][component].get()->onRemove(this, entity);
+            entities[entity].get()->onRemove(this, component);
             components[entity].erase(component);
         }
     }
