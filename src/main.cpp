@@ -19,6 +19,39 @@ enum class SystemType
     DRAW
 };
 
+enum class SurfaceID
+{
+    GUI_FRAMES,
+    GUI_ICONS,
+};
+
+enum class TextureID
+{
+    GUI_FRAMES,
+    GUI_ICONS
+};
+
+enum class ShaderID
+{
+
+};
+
+enum class MeshID
+{
+
+};
+
+enum class FontID
+{
+    CYBERPUNK_CRAFTPIX_PIXEL
+};
+
+enum class LevelType
+{
+    MAINMENU,
+    SEWERAGE
+};
+
 struct glb_t
 {
     const int WINDOW_WIDTH = 1280;
@@ -34,10 +67,14 @@ struct glb_t
 
     ECS ecs;
 
+    EntityID surfacePlaceHolder;
+    EntityID texturePlaceHolder;
     EntityID shaderPlaceHolder;
     EntityID meshPlaceHolder;
+    EntityID level;
 } glb;
 
+template<typename T = int>
 struct PlaceHolderEntity : public Entity
 {
     PlaceHolderEntity(EntityID id) : Entity(id) {}
@@ -73,6 +110,16 @@ struct PlaceHolderEntity : public Entity
         return components[i];
     }
 
+    ComponentID& operator[](T i)
+    {
+        return components[static_cast<size_t>(i)];
+    }
+
+    const ComponentID& operator[](T i) const
+    {
+        return components[static_cast<size_t>(i)];
+    }
+
     std::vector<ComponentID> components;
 };
 
@@ -95,6 +142,42 @@ struct SurfaceComponent : public Component
 
     std::string path;
     SDL_Surface* surface;
+};
+
+struct TextureComponent : public Component
+{
+    TextureComponent(ComponentID id, SurfaceID surface) : Component(id), surface(surface) {}
+    ~TextureComponent() override = default;
+
+    void onAdd(ECS* ecs, EntityID entity) override 
+    {
+        auto* placeHolder = glb.ecs.getEntity<PlaceHolderEntity<SurfaceID>>(glb.surfacePlaceHolder);
+        auto* component = glb.ecs.getComponent<SurfaceComponent>(entity, (*placeHolder)[surface]);
+
+        SDL_Surface* formatted = SDL_ConvertSurfaceFormat(component->surface, SDL_PIXELFORMAT_RGBA32, 0);
+
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_2D, id);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, formatted->w, formatted->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, formatted->pixels);
+
+        width = formatted->w;
+        height = formatted->h;
+
+        SDL_FreeSurface(formatted);
+    }
+    void onRemove(ECS* ecs, EntityID entity) override 
+    {
+        glDeleteTextures(1, &id);
+    }
+
+    SurfaceID surface;
+    GLuint id;
+    int width;
+    int height;
 };
 
 struct ShaderComponent : public Component
@@ -267,6 +350,58 @@ struct MeshComponent : public Component
     GLuint ebo = 0;    
 };
 
+struct FontComponent : public Component
+{
+    FontComponent(ComponentID id, const std::string& path) 
+        : Component(id), path(path) {}
+    ~FontComponent() = default;
+
+    void onAdd(ECS* ecs, EntityID entity) override 
+    {
+        
+    }
+    void onRemove(ECS* ecs, EntityID entity) override 
+    {
+
+    }
+
+    TTF_Font* font;
+    std::string path;
+};
+
+struct LevelEntity : public Entity
+{
+    LevelEntity(EntityID id, LevelType type)
+        : Entity(id), type(type) {}
+    ~LevelEntity() = default;
+
+    void onCreate(ECS* ecs) override
+    {
+        switch (type)
+        {
+            default:
+            {
+                break;
+            }
+        }
+    }
+    void onDestroy(ECS* ecs) override
+    {
+        switch (type)
+        {
+            default:
+            {
+                break;
+            }
+        }
+    }
+
+    void onAdd(ECS* ecs, ComponentID component) override {}
+    void onRemove(ECS* ecs, ComponentID component) override {}
+
+    LevelType type;
+};
+
 void init()
 {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS);
@@ -288,8 +423,12 @@ void init()
     glb.context = SDL_GL_CreateContext(glb.window);
     glViewport(0, 0, glb.WINDOW_WIDTH, glb.WINDOW_HEIGHT);
 
-    glb.shaderPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity>();
-    glb.meshPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity>();
+    glb.surfacePlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<SurfaceID>>();
+    glb.texturePlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<TextureID>>();
+    glb.shaderPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<ShaderID>>();
+    glb.meshPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<MeshID>>();
+
+    glb.level = glb.ecs.createEntity<LevelEntity>(LevelType::MAINMENU);
 }
 
 void cleanup()
