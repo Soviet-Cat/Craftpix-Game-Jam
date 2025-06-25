@@ -1,6 +1,6 @@
 {
-    "C_Cpp.default.includePath": ["C:/Users/harri/emsdk/upstream/emscripten/system/include"],
-    "C_Cpp.default.compilerPath": "C:/Users/harri/emsdk/upstream/emscripten/em++.bat",
+    "C_Cpp.default.includePath": ["E:/emsdk/upstream/emscripten/system/include"],
+    "C_Cpp.default.compilerPath": "E:/emsdk/upstream/emscripten/em++.bat",
     "files.associations": {
         "__bit_reference": "cpp",
         "__hash_table": "cpp",
