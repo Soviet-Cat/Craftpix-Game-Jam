@@ -30,6 +30,8 @@ struct glb_t
     SDL_Event event;
     bool quit = false;
 
+    std::map<SDL_Keycode, bool> keyboard;
+
     ECS ecs;
 
     EntityID shaderPlaceHolder;
@@ -74,6 +76,27 @@ struct PlaceHolderEntity : public Entity
     std::vector<ComponentID> components;
 };
 
+struct SurfaceComponent : public Component
+{
+    SurfaceComponent(
+        ComponentID id,
+        const std::string& path
+    ) : Component(id), path(path) {}
+    ~SurfaceComponent() override = default;
+
+    void onAdd(ECS* ecs, EntityID entity) override 
+    {
+        surface = IMG_Load(path.c_str());
+    }
+    void onRemove(ECS* ecs, EntityID entity) override 
+    {
+        SDL_FreeSurface(surface);
+    }
+
+    std::string path;
+    SDL_Surface* surface;
+};
+
 struct ShaderComponent : public Component
 {
     ShaderComponent(
@@ -85,7 +108,64 @@ struct ShaderComponent : public Component
 
     void onAdd(ECS* ecs, EntityID entity) override 
     {
-        
+        vertex = glCreateShader(GL_VERTEX_SHADER);
+        fragment = glCreateShader(GL_FRAGMENT_SHADER);
+
+        const char* pVertexSrc = vertexSrc.c_str();
+        glShaderSource(vertex, 1, &pVertexSrc, nullptr);
+        const char* pFragmentSrc = fragmentSrc.c_str();
+
+        glCompileShader(vertex);
+        glCompileShader(fragment);
+
+        GLint vertexResult;
+        glGetShaderiv(vertex, GL_COMPILE_STATUS, &vertexResult);
+
+        GLint fragmentResult;
+        glGetShaderiv(fragment, GL_COMPILE_STATUS, &fragmentResult);
+
+        if (vertexResult == GL_FALSE)
+        {
+            GLint length;
+            glGetShaderiv(vertex, GL_INFO_LOG_LENGTH, &length);
+            char* msg = reinterpret_cast<char*>(length * sizeof(char));
+            glGetShaderInfoLog(vertex, length, &length, msg);
+            std::cout << "Failed to compile vertex shader!" << std::endl;
+            std::cout << msg << std::endl;
+            delete msg;
+        }
+
+        if (fragmentResult == GL_FALSE)
+        {
+            GLint length;
+            glGetShaderiv(fragment, GL_INFO_LOG_LENGTH, &length);
+            char* msg = reinterpret_cast<char*>(length * sizeof(char));
+            glGetShaderInfoLog(fragment, length, &length, msg);
+            std::cout << "Failed to compile vertex shader!" << std::endl;
+            std::cout << msg << std::endl;
+            delete msg;
+        }
+
+        program = glCreateProgram();
+
+        glAttachShader(program, vertex);
+        glAttachShader(program, fragment);
+
+        glLinkProgram(program);
+
+        GLint linkResult;
+        glGetProgramiv(program, GL_LINK_STATUS, &linkResult);
+
+        if (linkResult == GL_FALSE)
+        {
+            GLint length;
+            glGetShaderiv(program, GL_INFO_LOG_LENGTH, &length);
+            char* msg = reinterpret_cast<char*>(length * sizeof(char));
+            glGetShaderInfoLog(program, length, &length, msg);
+            std::cout << "Failed to link shader program!" << std::endl;
+            std::cout << msg << std::endl;
+            delete msg;
+        }
     }
     void onRemove(ECS* ecs, EntityID entity) override 
     {
@@ -135,6 +215,38 @@ struct MeshComponent : public Component
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
                 glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements.size() * sizeof(GLuint), elements.data(), GL_STATIC_DRAW);
             }
+        }
+
+        GLsizei stride;
+        GLint size;
+
+        for (auto& attribute : attributes)
+        {
+            size += attribute.second;
+        }
+
+        stride = size * sizeof(GLfloat);
+
+        for (size_t i = 0; i < attributes.size(); i++)
+        {
+            auto& attribute = attributes[i];
+            const void* offset = (const void*)(0);
+
+            if (i > 0)
+            {
+                auto& lastAttribute = attributes[i - 1];
+                offset = (const void*)(lastAttribute.second * sizeof(GLfloat));
+            }
+
+            glEnableVertexAttribArray(attribute.first);
+            glVertexAttribPointer(
+                attribute.first,
+                attribute.second,
+                GL_FLOAT,
+                GL_FALSE,
+                stride,
+                offset
+            );
         }
 
         glBindVertexArray(0);
