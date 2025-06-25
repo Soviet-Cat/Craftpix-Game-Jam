@@ -25,7 +25,7 @@ echo Building...
 
 call em++ %SRC_FILES% ^
     -o cyberswitch.js ^
-    --preload-file assets ^
+    --preload-file assets --preload-file shaders ^
     -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS=png -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2 ^
     -s USE_WEBGL2=1 -s MIN_WEBGL_VERSION=2 -s FULL_ES3=1 -lGL ^
     -s ALLOW_MEMORY_GROWTH=1 -fwasm-exceptions

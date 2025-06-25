@@ -11,6 +11,7 @@
 #include <SDL2/SDL_mixer.h>
 #include <GLES3/gl3.h>
 
+#include "helper.hpp"
 #include "ecs.hpp"
 
 enum class SystemType
@@ -33,7 +34,7 @@ enum class TextureID
 
 enum class ShaderID
 {
-
+    DEFAULT
 };
 
 enum class MeshID
@@ -199,6 +200,7 @@ struct ShaderComponent : public Component
         const char* pVertexSrc = vertexSrc.c_str();
         glShaderSource(vertex, 1, &pVertexSrc, nullptr);
         const char* pFragmentSrc = fragmentSrc.c_str();
+        glShaderSource(fragment, 1, &pFragmentSrc, nullptr);
 
         glCompileShader(vertex);
         glCompileShader(fragment);
@@ -435,7 +437,7 @@ void init()
     glb.ecs.addComponent<TextureComponent>(glb.texturePlaceHolder, SurfaceID::GUI_ICONS);
 
     glb.shaderPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<ShaderID>>();
-
+    glb.ecs.addComponent<ShaderComponent>(glb.shaderPlaceHolder, readFile("shaders/default_vertex.glsl"), readFile("shaders/default_fragment.glsl"));
 
     glb.meshPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<MeshID>>();
 
