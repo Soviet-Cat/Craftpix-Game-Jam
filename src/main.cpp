@@ -11,6 +11,10 @@
 #include <SDL2/SDL_mixer.h>
 #include <GLES3/gl3.h>
 
+#include "../lib/glm/glm.hpp"
+#include "../lib/glm/gtc/matrix_transform.hpp"
+#include "../lib/glm/gtc/type_ptr.hpp"
+
 #include "helper.hpp"
 #include "ecs.hpp"
 
@@ -34,7 +38,8 @@ enum class TextureID
 
 enum class ShaderID
 {
-    DEFAULT
+    DEFAULT,
+    SAMPLER
 };
 
 enum class MeshID
@@ -63,6 +68,11 @@ struct glb_t
     SDL_GLContext context;
     SDL_Event event;
     bool quit = false;
+
+    const int PIXEL_WIDTH = 640;
+    const int PIXEL_HEIGHT = 360;
+    const glm::vec2 RENDER_SCALE = glm::vec2(2.0 / PIXEL_WIDTH, 2.0 / PIXEL_HEIGHT);
+    glm::vec2 renderOffset;
 
     std::map<SDL_Keycode, bool> keyboard;
 
@@ -126,6 +136,14 @@ struct PlaceHolderEntity : public Entity
     std::vector<ComponentID> components;
 };
 
+template<typename T, typename U>
+T* getPlaceHolderComponent(EntityID placeHolder, const U& index)
+{
+    auto* entity = glb.ecs.getEntity<PlaceHolderEntity<U>>(placeHolder);
+    auto* component = glb.ecs.getComponent<T>(placeHolder, (*entity)[index]);
+    return component;
+};
+
 struct SurfaceComponent : public Component
 {
     SurfaceComponent(
@@ -154,8 +172,7 @@ struct TextureComponent : public Component
 
     void onAdd(ECS* ecs, EntityID entity) override 
     {
-        auto* placeHolder = glb.ecs.getEntity<PlaceHolderEntity<SurfaceID>>(glb.surfacePlaceHolder);
-        auto* component = glb.ecs.getComponent<SurfaceComponent>(glb.surfacePlaceHolder, (*placeHolder)[surface]);
+        auto* component = getPlaceHolderComponent<SurfaceComponent, SurfaceID>(glb.surfacePlaceHolder, surface);
 
         SDL_Surface* formatted = SDL_ConvertSurfaceFormat(component->surface, SDL_PIXELFORMAT_RGBA32, 0);
 
@@ -362,7 +379,7 @@ struct FontComponent : public Component
 
     void onAdd(ECS* ecs, EntityID entity) override 
     {
-        font =TTF_OpenFont(path.c_str(), size);
+        font = TTF_OpenFont(path.c_str(), size);
     }
     void onRemove(ECS* ecs, EntityID entity) override 
     {
@@ -372,6 +389,115 @@ struct FontComponent : public Component
     TTF_Font* font;
     std::string path;
     int size;
+};
+
+struct TransformComponent : public Component
+{
+    TransformComponent(ComponentID id, const glm::vec2& position, float rotation, const glm::vec2& scale)
+        : Component(id), position(position), rotation(rotation), scale(scale) {}
+    ~TransformComponent() = default;
+
+    void onAdd(ECS* ecs, EntityID entity) override {}
+    void onRemove(ECS* ecs, EntityID entity) override {}
+
+    glm::vec2 position;
+    float rotation;
+    glm::vec2 scale;
+};
+
+struct TextureSamplerComponent : public Component
+{
+    TextureSamplerComponent(ComponentID id, ComponentID transform, TextureID texture, MeshID mesh, const glm::vec2& size, const glm::vec2& portion, bool center) 
+        : Component(id), transform(transform), texture(texture), mesh(mesh), size(size), portion(portion) {}
+    ~TextureSamplerComponent() = default;
+
+    void onAdd(ECS* ecs, EntityID entity) override {}
+    void onRemove(ECS* ecs, EntityID entity) override {}
+
+    ComponentID transform;
+    TextureID texture;
+    MeshID mesh;
+    glm::vec2 size;
+    glm::vec2 portion;
+    bool flipX;
+    bool flipY;
+};
+
+struct TextureSamplerSystemData : public SystemData
+{
+    TextureSamplerSystemData(SystemDataID id)
+        : SystemData(id) {}
+    ~TextureSamplerSystemData() = default;
+
+    ShaderComponent* shader;
+    GLint uModel;
+    GLint uSampler2D;
+    GLint uSize;
+    GLint uPortion;
+    GLint uFlipX;
+    GLint uFlipY;
+};
+
+struct TextureSamplerSystem : public System
+{
+    TextureSamplerSystem(SystemID id, SystemDataID data)
+        : System(id, data) {}
+    ~TextureSamplerSystem() = default;
+
+    void onAdd(ECS* ecs) override 
+    {
+        auto* pData = ecs->getSystemData<TextureSamplerSystemData>(data);
+        pData->shader = getPlaceHolderComponent<ShaderComponent, ShaderID>(glb.shaderPlaceHolder, ShaderID::SAMPLER);
+        pData->uModel = glGetUniformLocation(pData->shader->program, "model");
+        pData->uSampler2D = glGetUniformLocation(pData->shader->program, "tex");
+        pData->uSize = glGetUniformLocation(pData->shader->program, "size");
+        pData->uPortion = glGetUniformLocation(pData->shader->program, "portion");
+        pData->uFlipX = glGetUniformLocation(pData->shader->program, "flipX");
+        pData->uFlipY = glGetUniformLocation(pData->shader->program, "flipY");
+    }
+    void onRemove(ECS* ecs) override {}
+
+    void onApply(ECS* ecs, EntityID entity) override 
+    {
+        auto* pData = ecs->getSystemData<TextureSamplerSystemData>(data);
+
+        glUseProgram(pData->shader->program);
+
+        auto samplers = ecs->getComponent<TextureSamplerComponent>(entity);
+        for (auto* sampler : samplers)
+        {
+            auto* transform = ecs->getComponent<TransformComponent>(entity, sampler->transform);
+            auto* texture = getPlaceHolderComponent<TextureComponent, TextureID>(glb.texturePlaceHolder, sampler->texture);
+            auto* mesh = getPlaceHolderComponent<MeshComponent, MeshID>(glb.meshPlaceHolder, sampler->mesh);
+
+            GLint textureSlot = static_cast<GLint>(sampler->texture);
+            glActiveTexture(GL_TEXTURE0 + textureSlot);
+            glBindTexture(GL_TEXTURE_2D, texture->id);
+
+            glm::vec2 position = (transform->position + glb.renderOffset) * glb.RENDER_SCALE;
+
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(position, 0.0f));
+            model = glm::rotate(model, glm::radians(transform->rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+            model = glm::scale(model, glm::vec3(transform->scale, 1.0f));
+
+            glUniformMatrix4fv(pData->uModel, 1, GL_FALSE, &model[0][0]);
+
+            glUniform1i(pData->uSampler2D, textureSlot);
+            glUniform2f(pData->uSize, sampler->size.x, sampler->size.y);
+            glUniform2f(pData->uPortion, sampler->portion.x, sampler->portion.y);
+            glUniform1i(pData->uFlipX, sampler->flipX ? 1 : 0);
+            glUniform1f(pData->uFlipY, sampler->flipY ? 1 : 0);
+
+            glBindVertexArray(mesh->vao);
+
+            glDrawElements(GL_TRIANGLES, mesh->elements.size(), GL_UNSIGNED_INT, 0);
+            
+            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    }
+
+    SystemType type = SystemType::DRAW;
 };
 
 struct LevelEntity : public Entity

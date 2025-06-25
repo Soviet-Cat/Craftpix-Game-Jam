@@ -27,7 +27,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: C:\Users\harri\AppData\Local\Temp\tmpncvbi00l.js
+// include: C:\Users\harri\AppData\Local\Temp\tmpg03ofvx9.js
 
   Module['expectedDataFileDownloads'] ??= 0;
   Module['expectedDataFileDownloads']++;
@@ -205,25 +205,25 @@ Module['FS_createPath']("/", "shaders", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/assets/CyberpunkCraftpixPixel.otf", "start": 0, "end": 7704}, {"filename": "/assets/gui_frames.png", "start": 7704, "end": 186860}, {"filename": "/assets/gui_icons.png", "start": 186860, "end": 194726}, {"filename": "/assets/maincharacters.png", "start": 194726, "end": 359913}, {"filename": "/shaders/default_fragment.glsl", "start": 359913, "end": 360114}, {"filename": "/shaders/default_vertex.glsl", "start": 360114, "end": 360411}], "remote_package_size": 360411});
+    loadPackage({"files": [{"filename": "/assets/CyberpunkCraftpixPixel.otf", "start": 0, "end": 7704}, {"filename": "/assets/gui_frames.png", "start": 7704, "end": 186860}, {"filename": "/assets/gui_icons.png", "start": 186860, "end": 194726}, {"filename": "/assets/maincharacters.png", "start": 194726, "end": 359913}, {"filename": "/shaders/default_fragment.glsl", "start": 359913, "end": 360114}, {"filename": "/shaders/default_vertex.glsl", "start": 360114, "end": 360411}, {"filename": "/shaders/sampler_fragment.glsl", "start": 360411, "end": 360998}, {"filename": "/shaders/sampler_vertex.glsl", "start": 360998, "end": 361244}], "remote_package_size": 361244});
 
   })();
 
-// end include: C:\Users\harri\AppData\Local\Temp\tmpncvbi00l.js
-// include: C:\Users\harri\AppData\Local\Temp\tmpu3athzjz.js
+// end include: C:\Users\harri\AppData\Local\Temp\tmpg03ofvx9.js
+// include: C:\Users\harri\AppData\Local\Temp\tmpx5fllz38.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if ((typeof ENVIRONMENT_IS_WASM_WORKER != 'undefined' && ENVIRONMENT_IS_WASM_WORKER) || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD) || (typeof ENVIRONMENT_IS_AUDIO_WORKLET != 'undefined' && ENVIRONMENT_IS_AUDIO_WORKLET)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: C:\Users\harri\AppData\Local\Temp\tmpu3athzjz.js
-// include: C:\Users\harri\AppData\Local\Temp\tmpkrclm_6c.js
+  // end include: C:\Users\harri\AppData\Local\Temp\tmpx5fllz38.js
+// include: C:\Users\harri\AppData\Local\Temp\tmp32qwr8r9.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: C:\Users\harri\AppData\Local\Temp\tmpkrclm_6c.js
+  // end include: C:\Users\harri\AppData\Local\Temp\tmp32qwr8r9.js
 
 
 var arguments_ = [];
