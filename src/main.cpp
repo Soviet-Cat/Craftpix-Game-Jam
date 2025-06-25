@@ -21,14 +21,14 @@ enum class SystemType
 
 enum class SurfaceID
 {
-    GUI_FRAMES,
-    GUI_ICONS,
+    GUI_FRAMES = 0,
+    GUI_ICONS = 1
 };
 
 enum class TextureID
 {
-    GUI_FRAMES,
-    GUI_ICONS
+    GUI_FRAMES = 0,
+    GUI_ICONS = 1
 };
 
 enum class ShaderID
@@ -71,6 +71,8 @@ struct glb_t
     EntityID texturePlaceHolder;
     EntityID shaderPlaceHolder;
     EntityID meshPlaceHolder;
+    EntityID fontPlaceHolder;
+
     EntityID level;
 } glb;
 
@@ -152,7 +154,7 @@ struct TextureComponent : public Component
     void onAdd(ECS* ecs, EntityID entity) override 
     {
         auto* placeHolder = glb.ecs.getEntity<PlaceHolderEntity<SurfaceID>>(glb.surfacePlaceHolder);
-        auto* component = glb.ecs.getComponent<SurfaceComponent>(entity, (*placeHolder)[surface]);
+        auto* component = glb.ecs.getComponent<SurfaceComponent>(glb.surfacePlaceHolder, (*placeHolder)[surface]);
 
         SDL_Surface* formatted = SDL_ConvertSurfaceFormat(component->surface, SDL_PIXELFORMAT_RGBA32, 0);
 
@@ -352,21 +354,22 @@ struct MeshComponent : public Component
 
 struct FontComponent : public Component
 {
-    FontComponent(ComponentID id, const std::string& path) 
-        : Component(id), path(path) {}
+    FontComponent(ComponentID id, const std::string& path, int size) 
+        : Component(id), path(path), size(size) {}
     ~FontComponent() = default;
 
     void onAdd(ECS* ecs, EntityID entity) override 
     {
-        
+        font =TTF_OpenFont(path.c_str(), size);
     }
     void onRemove(ECS* ecs, EntityID entity) override 
     {
-
+        TTF_CloseFont(font);
     }
 
     TTF_Font* font;
     std::string path;
+    int size;
 };
 
 struct LevelEntity : public Entity
@@ -424,9 +427,21 @@ void init()
     glViewport(0, 0, glb.WINDOW_WIDTH, glb.WINDOW_HEIGHT);
 
     glb.surfacePlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<SurfaceID>>();
+    glb.ecs.addComponent<SurfaceComponent>(glb.surfacePlaceHolder, "assets/gui_frames.png");
+    glb.ecs.addComponent<SurfaceComponent>(glb.surfacePlaceHolder, "assets/gui_icons.png");
+
     glb.texturePlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<TextureID>>();
+    glb.ecs.addComponent<TextureComponent>(glb.texturePlaceHolder, SurfaceID::GUI_FRAMES);
+    glb.ecs.addComponent<TextureComponent>(glb.texturePlaceHolder, SurfaceID::GUI_ICONS);
+
     glb.shaderPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<ShaderID>>();
+
+
     glb.meshPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<MeshID>>();
+
+
+    glb.fontPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<FontID>>();
+    glb.ecs.addComponent<FontComponent>(glb.fontPlaceHolder, "assets/CyberpunkCraftpixPixel.otf", 32);
 
     glb.level = glb.ecs.createEntity<LevelEntity>(LevelType::MAINMENU);
 }
