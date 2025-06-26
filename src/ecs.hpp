@@ -333,16 +333,6 @@ struct ECS
             dataID = {typeID, intID};
         }
 
-        if (systemID.second == -1)
-        {
-            std::cout << "Failed to add system!" << std::endl;
-        } else
-        {
-            SystemPtr systemPtr = SystemPtr(new T(systemID, dataID));
-            systems[systemID] = std::move(systemPtr);
-            systems[systemID].get()->onAdd(this);
-        }
-
         if (dataID.second == -1)
         {
             std::cout << "Failed to add system data!" << std::endl;
@@ -352,6 +342,16 @@ struct ECS
             systemData[dataID] = std::move(dataPtr);
         }
 
+        if (systemID.second == -1)
+        {
+            std::cout << "Failed to add system!" << std::endl;
+        } else
+        {
+            SystemPtr systemPtr = SystemPtr(new T(systemID, dataID));
+            systems[systemID] = std::move(systemPtr);
+            systems[systemID].get()->onAdd(this);
+        }
+        
         return systemID;
     }
 
@@ -421,10 +421,6 @@ struct ECS
         std::vector<System*> vSystems;
         for (auto& i : systems)
         {
-            if (!i.second.get())
-            {
-                continue;
-            }
             if (i.second.get()->type == type)
             {
                 vSystems.push_back(i.second.get());

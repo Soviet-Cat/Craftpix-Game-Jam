@@ -44,7 +44,7 @@ enum class ShaderID
 
 enum class MeshID
 {
-
+    QUAD_32x32
 };
 
 enum class FontID
@@ -180,7 +180,7 @@ struct TextureComponent : public Component
         glBindTexture(GL_TEXTURE_2D, id);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, formatted->w, formatted->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, formatted->pixels);
 
@@ -232,22 +232,22 @@ struct ShaderComponent : public Component
         {
             GLint length;
             glGetShaderiv(vertex, GL_INFO_LOG_LENGTH, &length);
-            char* msg = reinterpret_cast<char*>(length * sizeof(char));
+            char* msg = new char[length];
             glGetShaderInfoLog(vertex, length, &length, msg);
             std::cout << "Failed to compile vertex shader!" << std::endl;
             std::cout << msg << std::endl;
-            delete msg;
+            delete[] msg;
         }
 
         if (fragmentResult == GL_FALSE)
         {
             GLint length;
             glGetShaderiv(fragment, GL_INFO_LOG_LENGTH, &length);
-            char* msg = reinterpret_cast<char*>(length * sizeof(char));
+            char* msg = new char[length];
             glGetShaderInfoLog(fragment, length, &length, msg);
-            std::cout << "Failed to compile vertex shader!" << std::endl;
+            std::cout << "Failed to compile fragment shader!" << std::endl;
             std::cout << msg << std::endl;
-            delete msg;
+            delete[] msg;
         }
 
         program = glCreateProgram();
@@ -263,12 +263,12 @@ struct ShaderComponent : public Component
         if (linkResult == GL_FALSE)
         {
             GLint length;
-            glGetShaderiv(program, GL_INFO_LOG_LENGTH, &length);
-            char* msg = reinterpret_cast<char*>(length * sizeof(char));
-            glGetShaderInfoLog(program, length, &length, msg);
+            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+            char* msg = new char[length];
+            glGetProgramInfoLog(program, length, &length, msg);
             std::cout << "Failed to link shader program!" << std::endl;
             std::cout << msg << std::endl;
-            delete msg;
+            delete[] msg;
         }
     }
     void onRemove(ECS* ecs, EntityID entity) override 
@@ -300,6 +300,27 @@ struct MeshComponent : public Component
         std::vector<std::pair<GLuint, GLint>> attributes
     ) : Component(id),
         type(type), vertices(vertices), elements(elements), attributes(attributes) {}
+    MeshComponent(
+        ComponentID id,
+        MeshType type,
+        const glm::vec2& size
+    ) : Component(id), type(type)
+    {
+        glm::vec2 scaledSize = size * glb.RENDER_SCALE;
+        glm::vec2 halfSize = scaledSize / 2.0f;
+        vertices = {
+            -halfSize.x, halfSize.y, 0.0f, 1.0f,
+            -halfSize.x, -halfSize.y, 0.0f, 0.0f,
+            halfSize.x, -halfSize.y, 1.0f, 0.0f,
+            halfSize.x, halfSize.y, 1.0f, 1.0f
+        };
+        elements = {
+            0, 1, 2, 2, 3, 0
+        };
+        attributes = {
+            {0, 2}, {1, 2}
+        };
+    }
     ~MeshComponent() override = default;
 
     void onAdd(ECS* ecs, EntityID entity) override 
@@ -322,7 +343,7 @@ struct MeshComponent : public Component
         }
 
         GLsizei stride;
-        GLint size;
+        GLint size = 0;
 
         for (auto& attribute : attributes)
         {
@@ -407,8 +428,8 @@ struct TransformComponent : public Component
 
 struct TextureSamplerComponent : public Component
 {
-    TextureSamplerComponent(ComponentID id, ComponentID transform, TextureID texture, MeshID mesh, const glm::vec2& size, const glm::vec2& portion, bool center) 
-        : Component(id), transform(transform), texture(texture), mesh(mesh), size(size), portion(portion) {}
+    TextureSamplerComponent(ComponentID id, ComponentID transform, TextureID texture, MeshID mesh, const glm::vec2& size, const glm::vec2& portion, bool flipX, bool flipY) 
+        : Component(id), transform(transform), texture(texture), mesh(mesh), size(size), portion(portion), flipX(flipX), flipY(flipY) {}
     ~TextureSamplerComponent() = default;
 
     void onAdd(ECS* ecs, EntityID entity) override {}
@@ -441,7 +462,10 @@ struct TextureSamplerSystemData : public SystemData
 struct TextureSamplerSystem : public System
 {
     TextureSamplerSystem(SystemID id, SystemDataID data)
-        : System(id, data) {}
+        : System(id, data) 
+        {
+            type = SystemType::DRAW;
+        }
     ~TextureSamplerSystem() = default;
 
     void onAdd(ECS* ecs) override 
@@ -458,7 +482,7 @@ struct TextureSamplerSystem : public System
     void onRemove(ECS* ecs) override {}
 
     void onApply(ECS* ecs, EntityID entity) override 
-    {
+    {            
         auto* pData = ecs->getSystemData<TextureSamplerSystemData>(data);
 
         glUseProgram(pData->shader->program);
@@ -482,11 +506,16 @@ struct TextureSamplerSystem : public System
 
             glUniformMatrix4fv(pData->uModel, 1, GL_FALSE, &model[0][0]);
 
+            glm::vec2 scale = glm::vec2(1.0 / texture->width, 1.0 / texture->height);
+
             glUniform1i(pData->uSampler2D, textureSlot);
-            glUniform2f(pData->uSize, sampler->size.x, sampler->size.y);
-            glUniform2f(pData->uPortion, sampler->portion.x, sampler->portion.y);
+            glUniform2f(pData->uSize, sampler->size.x * scale.x, sampler->size.y * scale.y);
+            glUniform2f(pData->uPortion, sampler->portion.x * scale.x, sampler->portion.y * scale.y);
             glUniform1i(pData->uFlipX, sampler->flipX ? 1 : 0);
-            glUniform1f(pData->uFlipY, sampler->flipY ? 1 : 0);
+            glUniform1i(pData->uFlipY, sampler->flipY ? 1 : 0);
+
+            std::cout << "uSize: (" << sampler->size.x * scale.x << ", " << sampler->size.y * scale.y << 
+                        "), uPortion: (" << sampler->portion.x * scale.x << ", " << sampler->portion.y * scale.y << ")" << std::endl;
 
             glBindVertexArray(mesh->vao);
 
@@ -496,8 +525,6 @@ struct TextureSamplerSystem : public System
             glBindTexture(GL_TEXTURE_2D, 0);
         }
     }
-
-    SystemType type = SystemType::DRAW;
 };
 
 struct LevelEntity : public Entity
@@ -553,6 +580,8 @@ void init()
 
     glb.context = SDL_GL_CreateContext(glb.window);
     glViewport(0, 0, glb.WINDOW_WIDTH, glb.WINDOW_HEIGHT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glb.surfacePlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<SurfaceID>>();
     glb.ecs.addComponent<SurfaceComponent>(glb.surfacePlaceHolder, "assets/gui_frames.png");
@@ -564,14 +593,25 @@ void init()
 
     glb.shaderPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<ShaderID>>();
     glb.ecs.addComponent<ShaderComponent>(glb.shaderPlaceHolder, readFile("shaders/default_vertex.glsl"), readFile("shaders/default_fragment.glsl"));
+    glb.ecs.addComponent<ShaderComponent>(glb.shaderPlaceHolder, readFile("shaders/sampler_vertex.glsl"), readFile("shaders/sampler_fragment.glsl"));
 
     glb.meshPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<MeshID>>();
-
+    glb.ecs.addComponent<MeshComponent>(glb.meshPlaceHolder, MeshType::STATIC, glm::vec2{32.0f, 32.0f});
 
     glb.fontPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<FontID>>();
     glb.ecs.addComponent<FontComponent>(glb.fontPlaceHolder, "assets/CyberpunkCraftpixPixel.otf", 32);
 
     glb.level = glb.ecs.createEntity<LevelEntity>(LevelType::MAINMENU);
+    ComponentID transform = glb.ecs.addComponent<TransformComponent>(glb.level, 
+        glm::vec2{0.0f, 0.0f},
+        0.0f,
+        glm::vec2{1.0f, 1.0f}
+    );
+    glb.ecs.addComponent<TextureSamplerComponent>(glb.level, 
+        transform, TextureID::GUI_ICONS, MeshID::QUAD_32x32, 
+        glm::vec2{32.0f, 32.0f}, glm::vec2{0.0f, 0.0f}, false, false
+    );
+    glb.ecs.addSystem<TextureSamplerSystem, TextureSamplerSystemData>();
 }
 
 void cleanup()
