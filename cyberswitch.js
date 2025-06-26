@@ -29,7 +29,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: C:\Users\harri\AppData\Local\Temp\tmpze425oty.js
+// include: C:\Users\harri\AppData\Local\Temp\tmpb59fri3s.js
 Module["expectedDataFileDownloads"] ??= 0;
 
 Module["expectedDataFileDownloads"]++;
@@ -197,55 +197,67 @@ Module["expectedDataFileDownloads"]++;
       "start": 0,
       "end": 7704
     }, {
-      "filename": "/assets/gui_frames.png",
+      "filename": "/assets/basement_background.png",
       "start": 7704,
-      "end": 186860
+      "end": 22486
+    }, {
+      "filename": "/assets/gui_frames.png",
+      "start": 22486,
+      "end": 201642
     }, {
       "filename": "/assets/gui_icons.png",
-      "start": 186860,
-      "end": 194726
+      "start": 201642,
+      "end": 209508
     }, {
       "filename": "/assets/maincharacters.png",
-      "start": 194726,
-      "end": 359913
+      "start": 209508,
+      "end": 374695
     }, {
       "filename": "/shaders/default_fragment.glsl",
-      "start": 359913,
-      "end": 360114
+      "start": 374695,
+      "end": 374896
     }, {
       "filename": "/shaders/default_vertex.glsl",
-      "start": 360114,
-      "end": 360411
+      "start": 374896,
+      "end": 375193
+    }, {
+      "filename": "/shaders/parallax_fragment.glsl",
+      "start": 375193,
+      "end": 375831
+    }, {
+      "filename": "/shaders/parallax_vertex.glsl",
+      "start": 375831,
+      "end": 376046
     }, {
       "filename": "/shaders/sampler_fragment.glsl",
-      "start": 360411,
-      "end": 360977
+      "start": 376046,
+      "end": 376612
     }, {
       "filename": "/shaders/sampler_vertex.glsl",
-      "start": 360977,
-      "end": 361223
+      "start": 376612,
+      "end": 376858
     } ],
-    "remote_package_size": 361223
+    "remote_package_size": 376858
   });
 })();
 
-// end include: C:\Users\harri\AppData\Local\Temp\tmpze425oty.js
-// include: C:\Users\harri\AppData\Local\Temp\tmp7jmipki8.js
+// end include: C:\Users\harri\AppData\Local\Temp\tmpb59fri3s.js
+// include: C:\Users\harri\AppData\Local\Temp\tmpd660jxc9.js
 // All the pre-js content up to here must remain later on, we need to run
 // it.
 if ((typeof ENVIRONMENT_IS_WASM_WORKER != "undefined" && ENVIRONMENT_IS_WASM_WORKER) || (typeof ENVIRONMENT_IS_PTHREAD != "undefined" && ENVIRONMENT_IS_PTHREAD) || (typeof ENVIRONMENT_IS_AUDIO_WORKLET != "undefined" && ENVIRONMENT_IS_AUDIO_WORKLET)) Module["preRun"] = [];
 
 var necessaryPreJSTasks = Module["preRun"].slice();
 
-// end include: C:\Users\harri\AppData\Local\Temp\tmp7jmipki8.js
-// include: C:\Users\harri\AppData\Local\Temp\tmpopyk3632.js
+// end include: C:\Users\harri\AppData\Local\Temp\tmpd660jxc9.js
+// include: C:\Users\harri\AppData\Local\Temp\tmpqyy544u8.js
 if (!Module["preRun"]) throw "Module.preRun should exist because file support used it; did a pre-js delete it?";
 
 necessaryPreJSTasks.forEach(task => {
   if (Module["preRun"].indexOf(task) < 0) throw "All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?";
 });
 
-// end include: C:\Users\harri\AppData\Local\Temp\tmpopyk3632.js
+// end include: C:\Users\harri\AppData\Local\Temp\tmpqyy544u8.js
 var arguments_ = [];
 
 var thisProgram = "./this.program";
@@ -10613,7 +10625,7 @@ function checkIncomingModuleAPI() {
 }
 
 var ASM_CONSTS = {
-  307349533: $0 => {
+  307346589: $0 => {
     var str = UTF8ToString($0) + "\n\n" + "Abort/Retry/Ignore/AlwaysIgnore? [ariA] :";
     var reply = window.prompt(str, "i");
     if (reply === null) {
@@ -10621,7 +10633,7 @@ var ASM_CONSTS = {
     }
     return allocate(intArrayFromString(reply), "i8", ALLOC_NORMAL);
   },
-  307349758: () => {
+  307346814: () => {
     if (typeof (AudioContext) !== "undefined") {
       return true;
     } else if (typeof (webkitAudioContext) !== "undefined") {
@@ -10629,7 +10641,7 @@ var ASM_CONSTS = {
     }
     return false;
   },
-  307349905: () => {
+  307346961: () => {
     if ((typeof (navigator.mediaDevices) !== "undefined") && (typeof (navigator.mediaDevices.getUserMedia) !== "undefined")) {
       return true;
     } else if (typeof (navigator.webkitGetUserMedia) !== "undefined") {
@@ -10637,7 +10649,7 @@ var ASM_CONSTS = {
     }
     return false;
   },
-  307350139: $0 => {
+  307347195: $0 => {
     if (typeof (Module["SDL2"]) === "undefined") {
       Module["SDL2"] = {};
     }
@@ -10661,11 +10673,11 @@ var ASM_CONSTS = {
     }
     return SDL2.audioContext === undefined ? -1 : 0;
   },
-  307350691: () => {
+  307347747: () => {
     var SDL2 = Module["SDL2"];
     return SDL2.audioContext.sampleRate;
   },
-  307350759: ($0, $1, $2, $3) => {
+  307347815: ($0, $1, $2, $3) => {
     var SDL2 = Module["SDL2"];
     var have_microphone = function(stream) {
       if (SDL2.capture.silenceTimer !== undefined) {
@@ -10707,7 +10719,7 @@ var ASM_CONSTS = {
       }, have_microphone, no_microphone);
     }
   },
-  307352452: ($0, $1, $2, $3) => {
+  307349508: ($0, $1, $2, $3) => {
     var SDL2 = Module["SDL2"];
     SDL2.audio.scriptProcessorNode = SDL2.audioContext["createScriptProcessor"]($1, 0, $0);
     SDL2.audio.scriptProcessorNode["onaudioprocess"] = function(e) {
@@ -10739,7 +10751,7 @@ var ASM_CONSTS = {
       SDL2.audio.silenceTimer = setInterval(silence_callback, ($1 / SDL2.audioContext.sampleRate) * 1e3);
     }
   },
-  307353627: ($0, $1) => {
+  307350683: ($0, $1) => {
     var SDL2 = Module["SDL2"];
     var numChannels = SDL2.capture.currentCaptureBuffer.numberOfChannels;
     for (var c = 0; c < numChannels; ++c) {
@@ -10758,7 +10770,7 @@ var ASM_CONSTS = {
       }
     }
   },
-  307354232: ($0, $1) => {
+  307351288: ($0, $1) => {
     var SDL2 = Module["SDL2"];
     var buf = $0 >>> 2;
     var numChannels = SDL2.audio.currentOutputBuffer["numberOfChannels"];
@@ -10772,7 +10784,7 @@ var ASM_CONSTS = {
       }
     }
   },
-  307354721: $0 => {
+  307351777: $0 => {
     var SDL2 = Module["SDL2"];
     if ($0) {
       if (SDL2.capture.silenceTimer !== undefined) {
@@ -10806,7 +10818,7 @@ var ASM_CONSTS = {
       SDL2.audioContext = undefined;
     }
   },
-  307355727: ($0, $1, $2) => {
+  307352783: ($0, $1, $2) => {
     var w = $0;
     var h = $1;
     var pixels = $2;
@@ -10877,7 +10889,7 @@ var ASM_CONSTS = {
     }
     SDL2.ctx.putImageData(SDL2.image, 0, 0);
   },
-  307357195: ($0, $1, $2, $3, $4) => {
+  307354251: ($0, $1, $2, $3, $4) => {
     var w = $0;
     var h = $1;
     var hot_x = $2;
@@ -10914,18 +10926,18 @@ var ASM_CONSTS = {
     stringToUTF8(url, urlBuf, url.length + 1);
     return urlBuf;
   },
-  307358183: $0 => {
+  307355239: $0 => {
     if (Module["canvas"]) {
       Module["canvas"].style["cursor"] = UTF8ToString($0);
     }
   },
-  307358266: () => {
+  307355322: () => {
     if (Module["canvas"]) {
       Module["canvas"].style["cursor"] = "none";
     }
   },
-  307358335: () => window.innerWidth,
-  307358365: () => window.innerHeight
+  307355391: () => window.innerWidth,
+  307355421: () => window.innerHeight
 };
 
 // Imports from the Wasm binary.
@@ -11406,7 +11418,6 @@ var wasmImports = {
   /** @export */ fd_read: _fd_read,
   /** @export */ fd_seek: _fd_seek,
   /** @export */ fd_write: _fd_write,
-  /** @export */ glActiveTexture: _glActiveTexture,
   /** @export */ glAttachShader: _glAttachShader,
   /** @export */ glBindBuffer: _glBindBuffer,
   /** @export */ glBindTexture: _glBindTexture,
@@ -11423,7 +11434,6 @@ var wasmImports = {
   /** @export */ glDeleteShader: _glDeleteShader,
   /** @export */ glDeleteTextures: _glDeleteTextures,
   /** @export */ glDeleteVertexArrays: _glDeleteVertexArrays,
-  /** @export */ glDrawElements: _glDrawElements,
   /** @export */ glEnable: _glEnable,
   /** @export */ glEnableVertexAttribArray: _glEnableVertexAttribArray,
   /** @export */ glGenBuffers: _glGenBuffers,
@@ -11433,15 +11443,10 @@ var wasmImports = {
   /** @export */ glGetProgramiv: _glGetProgramiv,
   /** @export */ glGetShaderInfoLog: _glGetShaderInfoLog,
   /** @export */ glGetShaderiv: _glGetShaderiv,
-  /** @export */ glGetUniformLocation: _glGetUniformLocation,
   /** @export */ glLinkProgram: _glLinkProgram,
   /** @export */ glShaderSource: _glShaderSource,
   /** @export */ glTexImage2D: _glTexImage2D,
   /** @export */ glTexParameteri: _glTexParameteri,
-  /** @export */ glUniform1i: _glUniform1i,
-  /** @export */ glUniform2f: _glUniform2f,
-  /** @export */ glUniformMatrix4fv: _glUniformMatrix4fv,
-  /** @export */ glUseProgram: _glUseProgram,
   /** @export */ glVertexAttribPointer: _glVertexAttribPointer,
   /** @export */ glViewport: _glViewport,
   /** @export */ proc_exit: _proc_exit

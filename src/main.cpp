@@ -39,12 +39,14 @@ enum class TextureID
 enum class ShaderID
 {
     DEFAULT,
-    SAMPLER
+    SAMPLER,
+    PARALLAX
 };
 
 enum class MeshID
 {
-    QUAD_32x32
+    QUAD_32x32,
+    QUAD_640x360
 };
 
 enum class FontID
@@ -428,8 +430,8 @@ struct TransformComponent : public Component
 
 struct TextureSamplerComponent : public Component
 {
-    TextureSamplerComponent(ComponentID id, ComponentID transform, TextureID texture, MeshID mesh, const glm::vec2& size, const glm::vec2& portion, bool flipX, bool flipY) 
-        : Component(id), transform(transform), texture(texture), mesh(mesh), size(size), portion(portion), flipX(flipX), flipY(flipY) {}
+    TextureSamplerComponent(ComponentID id, ComponentID transform, TextureID texture, MeshID mesh, const glm::vec2& size, const glm::vec2& portion, bool flipX, bool flipY, bool ui) 
+        : Component(id), transform(transform), texture(texture), mesh(mesh), size(size), portion(portion), flipX(flipX), flipY(flipY), ui(ui) {}
     ~TextureSamplerComponent() = default;
 
     void onAdd(ECS* ecs, EntityID entity) override {}
@@ -442,6 +444,7 @@ struct TextureSamplerComponent : public Component
     glm::vec2 portion;
     bool flipX;
     bool flipY;
+    bool ui;
 };
 
 struct TextureSamplerSystemData : public SystemData
@@ -499,6 +502,10 @@ struct TextureSamplerSystem : public System
             glBindTexture(GL_TEXTURE_2D, texture->id);
 
             glm::vec2 position = (transform->position + glb.renderOffset) * glb.RENDER_SCALE;
+            if (sampler->ui)
+            {
+                position = transform->position * glb.RENDER_SCALE;
+            }
 
             glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(position, 0.0f));
             model = glm::rotate(model, glm::radians(transform->rotation), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -514,9 +521,6 @@ struct TextureSamplerSystem : public System
             glUniform1i(pData->uFlipX, sampler->flipX ? 1 : 0);
             glUniform1i(pData->uFlipY, sampler->flipY ? 1 : 0);
 
-            std::cout << "uSize: (" << sampler->size.x * scale.x << ", " << sampler->size.y * scale.y << 
-                        "), uPortion: (" << sampler->portion.x * scale.x << ", " << sampler->portion.y * scale.y << ")" << std::endl;
-
             glBindVertexArray(mesh->vao);
 
             glDrawElements(GL_TRIANGLES, mesh->elements.size(), GL_UNSIGNED_INT, 0);
@@ -527,37 +531,52 @@ struct TextureSamplerSystem : public System
     }
 };
 
-struct LevelEntity : public Entity
+struct ParallaxBackgroundComponent : public Component
 {
-    LevelEntity(EntityID id, LevelType type)
-        : Entity(id), type(type) {}
-    ~LevelEntity() = default;
+    ParallaxBackgroundComponent(ComponentID id)
+        : Component(id) {}
+    ~ParallaxBackgroundComponent() = default;
+
+    void onAdd(ECS* ecs, EntityID entity) override {}
+    void onRemove(ECS* ecs, EntityID entity) override {}
+
+    TextureID texture;
+};
+
+struct ParallaxBackgroundSystemData : public SystemData
+{
+    ParallaxBackgroundSystemData(SystemDataID id) : SystemData(id) {}
+    ~ParallaxBackgroundSystemData() = default;
+};
+
+struct ParallaxBackgroungSystem : public System
+{
+    ParallaxBackgroungSystem(SystemID id, SystemDataID data) : System(id, data) {}
+    ~ParallaxBackgroungSystem() = default;
+
+    void onAdd(ECS* ecs) override {}
+    void onRemove(ECS* ecs) override {}
+
+    void onApply(ECS* ecs, EntityID entity) override {}                         
+};
+
+struct MainMenuLevelEntity : public Entity
+{
+    MainMenuLevelEntity(EntityID id)
+        : Entity(id) {}
+    ~MainMenuLevelEntity() = default;
 
     void onCreate(ECS* ecs) override
     {
-        switch (type)
-        {
-            default:
-            {
-                break;
-            }
-        }
+        
     }
     void onDestroy(ECS* ecs) override
     {
-        switch (type)
-        {
-            default:
-            {
-                break;
-            }
-        }
+        
     }
 
     void onAdd(ECS* ecs, ComponentID component) override {}
     void onRemove(ECS* ecs, ComponentID component) override {}
-
-    LevelType type;
 };
 
 void init()
@@ -594,24 +613,16 @@ void init()
     glb.shaderPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<ShaderID>>();
     glb.ecs.addComponent<ShaderComponent>(glb.shaderPlaceHolder, readFile("shaders/default_vertex.glsl"), readFile("shaders/default_fragment.glsl"));
     glb.ecs.addComponent<ShaderComponent>(glb.shaderPlaceHolder, readFile("shaders/sampler_vertex.glsl"), readFile("shaders/sampler_fragment.glsl"));
+    glb.ecs.addComponent<ShaderComponent>(glb.shaderPlaceHolder, readFile("shaders/parallax_vertex.glsl"), readFile("shaders/parallax_fragment.glsl"));
 
     glb.meshPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<MeshID>>();
     glb.ecs.addComponent<MeshComponent>(glb.meshPlaceHolder, MeshType::STATIC, glm::vec2{32.0f, 32.0f});
+    glb.ecs.addComponent<MeshComponent>(glb.meshPlaceHolder, MeshType::STATIC, glm::vec2{640.0f, 360.0f});
 
     glb.fontPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<FontID>>();
     glb.ecs.addComponent<FontComponent>(glb.fontPlaceHolder, "assets/CyberpunkCraftpixPixel.otf", 32);
 
-    glb.level = glb.ecs.createEntity<LevelEntity>(LevelType::MAINMENU);
-    ComponentID transform = glb.ecs.addComponent<TransformComponent>(glb.level, 
-        glm::vec2{0.0f, 0.0f},
-        0.0f,
-        glm::vec2{1.0f, 1.0f}
-    );
-    glb.ecs.addComponent<TextureSamplerComponent>(glb.level, 
-        transform, TextureID::GUI_ICONS, MeshID::QUAD_32x32, 
-        glm::vec2{32.0f, 32.0f}, glm::vec2{0.0f, 0.0f}, false, false
-    );
-    glb.ecs.addSystem<TextureSamplerSystem, TextureSamplerSystemData>();
+    glb.level = glb.ecs.createEntity<MainMenuLevelEntity>();
 }
 
 void cleanup()
