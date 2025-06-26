@@ -29,7 +29,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: C:\Users\harri\AppData\Local\Temp\tmpb59fri3s.js
+// include: C:\Users\harri\AppData\Local\Temp\tmplcx28eaj.js
 Module["expectedDataFileDownloads"] ??= 0;
 
 Module["expectedDataFileDownloads"]++;
@@ -241,23 +241,23 @@ Module["expectedDataFileDownloads"]++;
   });
 })();
 
-// end include: C:\Users\harri\AppData\Local\Temp\tmpb59fri3s.js
-// include: C:\Users\harri\AppData\Local\Temp\tmpd660jxc9.js
+// end include: C:\Users\harri\AppData\Local\Temp\tmplcx28eaj.js
+// include: C:\Users\harri\AppData\Local\Temp\tmp3flbjx7a.js
 // All the pre-js content up to here must remain later on, we need to run
 // it.
 if ((typeof ENVIRONMENT_IS_WASM_WORKER != "undefined" && ENVIRONMENT_IS_WASM_WORKER) || (typeof ENVIRONMENT_IS_PTHREAD != "undefined" && ENVIRONMENT_IS_PTHREAD) || (typeof ENVIRONMENT_IS_AUDIO_WORKLET != "undefined" && ENVIRONMENT_IS_AUDIO_WORKLET)) Module["preRun"] = [];
 
 var necessaryPreJSTasks = Module["preRun"].slice();
 
-// end include: C:\Users\harri\AppData\Local\Temp\tmpd660jxc9.js
-// include: C:\Users\harri\AppData\Local\Temp\tmpqyy544u8.js
+// end include: C:\Users\harri\AppData\Local\Temp\tmp3flbjx7a.js
+// include: C:\Users\harri\AppData\Local\Temp\tmpx53ovpz9.js
 if (!Module["preRun"]) throw "Module.preRun should exist because file support used it; did a pre-js delete it?";
 
 necessaryPreJSTasks.forEach(task => {
   if (Module["preRun"].indexOf(task) < 0) throw "All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?";
 });
 
-// end include: C:\Users\harri\AppData\Local\Temp\tmpqyy544u8.js
+// end include: C:\Users\harri\AppData\Local\Temp\tmpx53ovpz9.js
 var arguments_ = [];
 
 var thisProgram = "./this.program";
@@ -10625,7 +10625,7 @@ function checkIncomingModuleAPI() {
 }
 
 var ASM_CONSTS = {
-  307346589: $0 => {
+  307348093: $0 => {
     var str = UTF8ToString($0) + "\n\n" + "Abort/Retry/Ignore/AlwaysIgnore? [ariA] :";
     var reply = window.prompt(str, "i");
     if (reply === null) {
@@ -10633,7 +10633,7 @@ var ASM_CONSTS = {
     }
     return allocate(intArrayFromString(reply), "i8", ALLOC_NORMAL);
   },
-  307346814: () => {
+  307348318: () => {
     if (typeof (AudioContext) !== "undefined") {
       return true;
     } else if (typeof (webkitAudioContext) !== "undefined") {
@@ -10641,7 +10641,7 @@ var ASM_CONSTS = {
     }
     return false;
   },
-  307346961: () => {
+  307348465: () => {
     if ((typeof (navigator.mediaDevices) !== "undefined") && (typeof (navigator.mediaDevices.getUserMedia) !== "undefined")) {
       return true;
     } else if (typeof (navigator.webkitGetUserMedia) !== "undefined") {
@@ -10649,7 +10649,7 @@ var ASM_CONSTS = {
     }
     return false;
   },
-  307347195: $0 => {
+  307348699: $0 => {
     if (typeof (Module["SDL2"]) === "undefined") {
       Module["SDL2"] = {};
     }
@@ -10673,11 +10673,11 @@ var ASM_CONSTS = {
     }
     return SDL2.audioContext === undefined ? -1 : 0;
   },
-  307347747: () => {
+  307349251: () => {
     var SDL2 = Module["SDL2"];
     return SDL2.audioContext.sampleRate;
   },
-  307347815: ($0, $1, $2, $3) => {
+  307349319: ($0, $1, $2, $3) => {
     var SDL2 = Module["SDL2"];
     var have_microphone = function(stream) {
       if (SDL2.capture.silenceTimer !== undefined) {
@@ -10719,7 +10719,7 @@ var ASM_CONSTS = {
       }, have_microphone, no_microphone);
     }
   },
-  307349508: ($0, $1, $2, $3) => {
+  307351012: ($0, $1, $2, $3) => {
     var SDL2 = Module["SDL2"];
     SDL2.audio.scriptProcessorNode = SDL2.audioContext["createScriptProcessor"]($1, 0, $0);
     SDL2.audio.scriptProcessorNode["onaudioprocess"] = function(e) {
@@ -10751,7 +10751,7 @@ var ASM_CONSTS = {
       SDL2.audio.silenceTimer = setInterval(silence_callback, ($1 / SDL2.audioContext.sampleRate) * 1e3);
     }
   },
-  307350683: ($0, $1) => {
+  307352187: ($0, $1) => {
     var SDL2 = Module["SDL2"];
     var numChannels = SDL2.capture.currentCaptureBuffer.numberOfChannels;
     for (var c = 0; c < numChannels; ++c) {
@@ -10770,7 +10770,7 @@ var ASM_CONSTS = {
       }
     }
   },
-  307351288: ($0, $1) => {
+  307352792: ($0, $1) => {
     var SDL2 = Module["SDL2"];
     var buf = $0 >>> 2;
     var numChannels = SDL2.audio.currentOutputBuffer["numberOfChannels"];
@@ -10784,7 +10784,7 @@ var ASM_CONSTS = {
       }
     }
   },
-  307351777: $0 => {
+  307353281: $0 => {
     var SDL2 = Module["SDL2"];
     if ($0) {
       if (SDL2.capture.silenceTimer !== undefined) {
@@ -10818,7 +10818,7 @@ var ASM_CONSTS = {
       SDL2.audioContext = undefined;
     }
   },
-  307352783: ($0, $1, $2) => {
+  307354287: ($0, $1, $2) => {
     var w = $0;
     var h = $1;
     var pixels = $2;
@@ -10889,7 +10889,7 @@ var ASM_CONSTS = {
     }
     SDL2.ctx.putImageData(SDL2.image, 0, 0);
   },
-  307354251: ($0, $1, $2, $3, $4) => {
+  307355755: ($0, $1, $2, $3, $4) => {
     var w = $0;
     var h = $1;
     var hot_x = $2;
@@ -10926,18 +10926,18 @@ var ASM_CONSTS = {
     stringToUTF8(url, urlBuf, url.length + 1);
     return urlBuf;
   },
-  307355239: $0 => {
+  307356743: $0 => {
     if (Module["canvas"]) {
       Module["canvas"].style["cursor"] = UTF8ToString($0);
     }
   },
-  307355322: () => {
+  307356826: () => {
     if (Module["canvas"]) {
       Module["canvas"].style["cursor"] = "none";
     }
   },
-  307355391: () => window.innerWidth,
-  307355421: () => window.innerHeight
+  307356895: () => window.innerWidth,
+  307356925: () => window.innerHeight
 };
 
 // Imports from the Wasm binary.
@@ -11418,6 +11418,7 @@ var wasmImports = {
   /** @export */ fd_read: _fd_read,
   /** @export */ fd_seek: _fd_seek,
   /** @export */ fd_write: _fd_write,
+  /** @export */ glActiveTexture: _glActiveTexture,
   /** @export */ glAttachShader: _glAttachShader,
   /** @export */ glBindBuffer: _glBindBuffer,
   /** @export */ glBindTexture: _glBindTexture,
@@ -11434,6 +11435,7 @@ var wasmImports = {
   /** @export */ glDeleteShader: _glDeleteShader,
   /** @export */ glDeleteTextures: _glDeleteTextures,
   /** @export */ glDeleteVertexArrays: _glDeleteVertexArrays,
+  /** @export */ glDrawElements: _glDrawElements,
   /** @export */ glEnable: _glEnable,
   /** @export */ glEnableVertexAttribArray: _glEnableVertexAttribArray,
   /** @export */ glGenBuffers: _glGenBuffers,
@@ -11443,10 +11445,15 @@ var wasmImports = {
   /** @export */ glGetProgramiv: _glGetProgramiv,
   /** @export */ glGetShaderInfoLog: _glGetShaderInfoLog,
   /** @export */ glGetShaderiv: _glGetShaderiv,
+  /** @export */ glGetUniformLocation: _glGetUniformLocation,
   /** @export */ glLinkProgram: _glLinkProgram,
   /** @export */ glShaderSource: _glShaderSource,
   /** @export */ glTexImage2D: _glTexImage2D,
   /** @export */ glTexParameteri: _glTexParameteri,
+  /** @export */ glUniform1f: _glUniform1f,
+  /** @export */ glUniform1i: _glUniform1i,
+  /** @export */ glUniform2f: _glUniform2f,
+  /** @export */ glUseProgram: _glUseProgram,
   /** @export */ glVertexAttribPointer: _glVertexAttribPointer,
   /** @export */ glViewport: _glViewport,
   /** @export */ proc_exit: _proc_exit

@@ -27,13 +27,15 @@ enum class SystemType
 enum class SurfaceID
 {
     GUI_FRAMES = 0,
-    GUI_ICONS = 1
+    GUI_ICONS = 1,
+    BASEMENT_BACKGROUND = 2
 };
 
 enum class TextureID
 {
     GUI_FRAMES = 0,
-    GUI_ICONS = 1
+    GUI_ICONS = 1,
+    BASEMENT_BACKGROUND = 2
 };
 
 enum class ShaderID
@@ -533,31 +535,80 @@ struct TextureSamplerSystem : public System
 
 struct ParallaxBackgroundComponent : public Component
 {
-    ParallaxBackgroundComponent(ComponentID id)
-        : Component(id) {}
+    ParallaxBackgroundComponent(ComponentID id, TextureID texture, int layers)
+        : Component(id), texture(texture), layers(layers) {}
     ~ParallaxBackgroundComponent() = default;
 
     void onAdd(ECS* ecs, EntityID entity) override {}
     void onRemove(ECS* ecs, EntityID entity) override {}
 
     TextureID texture;
+    int layers;
 };
 
 struct ParallaxBackgroundSystemData : public SystemData
 {
     ParallaxBackgroundSystemData(SystemDataID id) : SystemData(id) {}
     ~ParallaxBackgroundSystemData() = default;
+
+    ShaderComponent* shader;
+    GLint uSampler2D;
+    GLint uOffset;
+    GLint uLayer;
+    GLint uMaxLayer;
 };
 
-struct ParallaxBackgroungSystem : public System
+struct ParallaxBackgroundSystem : public System
 {
-    ParallaxBackgroungSystem(SystemID id, SystemDataID data) : System(id, data) {}
-    ~ParallaxBackgroungSystem() = default;
+    ParallaxBackgroundSystem(SystemID id, SystemDataID data) : System(id, data) 
+    {
+        type = SystemType::DRAW;
+    }
+    ~ParallaxBackgroundSystem() = default;
 
-    void onAdd(ECS* ecs) override {}
+    void onAdd(ECS* ecs) override 
+    {
+        auto* pData = ecs->getSystemData<ParallaxBackgroundSystemData>(data);
+        pData->shader = getPlaceHolderComponent<ShaderComponent, ShaderID>(glb.shaderPlaceHolder, ShaderID::PARALLAX);
+        pData->uSampler2D = glGetUniformLocation(pData->shader->program, "tex");
+        pData->uOffset = glGetUniformLocation(pData->shader->program, "offset");
+        pData->uLayer = glGetUniformLocation(pData->shader->program, "layer");
+        pData->uMaxLayer = glGetUniformLocation(pData->shader->program, "maxLayer");
+    }
     void onRemove(ECS* ecs) override {}
 
-    void onApply(ECS* ecs, EntityID entity) override {}                         
+    void onApply(ECS* ecs, EntityID entity) override 
+    {
+        auto* pData = ecs->getSystemData<ParallaxBackgroundSystemData>(data);
+
+        glUseProgram(pData->shader->program);
+
+        auto backgrounds = ecs->getComponent<ParallaxBackgroundComponent>(entity);
+        for (auto* background : backgrounds)
+        {
+            auto* texture = getPlaceHolderComponent<TextureComponent, TextureID>(glb.texturePlaceHolder, background->texture);
+            auto* mesh = getPlaceHolderComponent<MeshComponent, MeshID>(glb.meshPlaceHolder, MeshID::QUAD_640x360);
+
+            GLint textureSlot = static_cast<GLint>(background->texture);
+            glActiveTexture(GL_TEXTURE0 + textureSlot);
+            glBindTexture(GL_TEXTURE_2D, texture->id);
+
+            glBindVertexArray(mesh->vao);
+
+            for (int i = 0; i < background->layers; i++)
+            {
+                glUniform1i(pData->uSampler2D, textureSlot);
+                glUniform2f(pData->uOffset, glb.renderOffset.x * glb.RENDER_SCALE.x, glb.renderOffset.y * glb.RENDER_SCALE.y);
+                glUniform1f(pData->uLayer, static_cast<GLfloat>(i));
+                glUniform1f(pData->uMaxLayer, static_cast<GLfloat>(background->layers));
+
+                glDrawElements(GL_TRIANGLES, mesh->elements.size(), GL_UNSIGNED_INT, 0);
+            }
+
+            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    }                         
 };
 
 struct MainMenuLevelEntity : public Entity
@@ -568,7 +619,11 @@ struct MainMenuLevelEntity : public Entity
 
     void onCreate(ECS* ecs) override
     {
-        
+        ecs->addComponent<ParallaxBackgroundComponent>(id,
+            TextureID::BASEMENT_BACKGROUND,
+            5
+        );
+        ecs->addSystem<ParallaxBackgroundSystem, ParallaxBackgroundSystemData>();
     }
     void onDestroy(ECS* ecs) override
     {
@@ -605,10 +660,12 @@ void init()
     glb.surfacePlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<SurfaceID>>();
     glb.ecs.addComponent<SurfaceComponent>(glb.surfacePlaceHolder, "assets/gui_frames.png");
     glb.ecs.addComponent<SurfaceComponent>(glb.surfacePlaceHolder, "assets/gui_icons.png");
+    glb.ecs.addComponent<SurfaceComponent>(glb.surfacePlaceHolder, "assets/basement_background.png");
 
     glb.texturePlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<TextureID>>();
     glb.ecs.addComponent<TextureComponent>(glb.texturePlaceHolder, SurfaceID::GUI_FRAMES);
     glb.ecs.addComponent<TextureComponent>(glb.texturePlaceHolder, SurfaceID::GUI_ICONS);
+    glb.ecs.addComponent<TextureComponent>(glb.texturePlaceHolder, SurfaceID::BASEMENT_BACKGROUND);
 
     glb.shaderPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<ShaderID>>();
     glb.ecs.addComponent<ShaderComponent>(glb.shaderPlaceHolder, readFile("shaders/default_vertex.glsl"), readFile("shaders/default_fragment.glsl"));
