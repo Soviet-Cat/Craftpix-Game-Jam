@@ -90,6 +90,9 @@ struct glb_t
     EntityID meshPlaceHolder;
     EntityID fontPlaceHolder;
 
+    SystemID cameraSystem;
+
+    EntityID mouse;
     EntityID level;
 } glb;
 
@@ -535,11 +538,140 @@ struct TextureSamplerSystem : public System
     }
 };
 
+enum class FontCharacter
+{
+    A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, Exclaim, Fullstop, Comma, Slash, Hyphen
+};
+const std::map<FontCharacter, char> FontCharacterMap = {
+    {FontCharacter::A, 'a'},
+    {FontCharacter::B, 'b'},
+    {FontCharacter::C, 'c'},
+    {FontCharacter::D, 'd'},
+    {FontCharacter::E, 'e'},
+    {FontCharacter::F, 'f'},
+    {FontCharacter::G, 'g'},
+    {FontCharacter::H, 'h'},
+    {FontCharacter::I, 'i'},
+    {FontCharacter::J, 'j'},
+    {FontCharacter::K, 'k'},
+    {FontCharacter::L, 'l'},
+    {FontCharacter::M, 'm'},
+    {FontCharacter::N, 'n'},
+    {FontCharacter::O, 'o'},
+    {FontCharacter::P, 'p'},
+    {FontCharacter::Q, 'q'},
+    {FontCharacter::R, 'r'},
+    {FontCharacter::S, 's'},
+    {FontCharacter::T, 't'},
+    {FontCharacter::U, 'u'},
+    {FontCharacter::V, 'v'},
+    {FontCharacter::W, 'w'},
+    {FontCharacter::X, 'x'},
+    {FontCharacter::Y, 'y'},
+    {FontCharacter::Z, 'z'},
+    {FontCharacter::_0, '0'},
+    {FontCharacter::_1, '1'},
+    {FontCharacter::_2, '2'},
+    {FontCharacter::_3, '3'},
+    {FontCharacter::_4, '4'},
+    {FontCharacter::_5, '5'},
+    {FontCharacter::_6, '6'},
+    {FontCharacter::_7, '7'},
+    {FontCharacter::_8, '8'},
+    {FontCharacter::_9, '9'},
+    {FontCharacter::Exclaim, '!'},
+    {FontCharacter::Fullstop, '.'},
+    {FontCharacter::Comma, ','},
+    {FontCharacter::Slash, '/'},
+    {FontCharacter::Hyphen, '-'}
+};
+
+struct TextEntity : public Entity
+{
+    TextEntity(EntityID id, const std::string& text) 
+        : Entity(id), text(text) {}
+    ~TextEntity() override = default;
+
+    void onCreate(ECS* ecs) override 
+    {
+        for (char c : text)
+        {
+
+        }
+    }
+    void onDestroy(ECS* ecs) override {}
+
+    void onAdd(ECS* ecs, ComponentID component) override {}
+    void onRemove(ECS* ecs, ComponentID component) override {}
+
+    std::string text;
+};
+
+struct CameraComponent : public Component
+{
+    CameraComponent(ComponentID id, ComponentID transform, float speed)
+        : Component(id), transform(transform), speed(speed) {}
+    ~CameraComponent() override = default;
+
+    void onAdd(ECS* ecs, EntityID entity) override {}
+    void onRemove(ECS* ecs, EntityID entity) override {}
+
+    ComponentID transform;
+    glm::vec2 offset = {0.0f, 0.0f};
+    float speed;
+};
+
+struct CameraSystemData : public SystemData
+{
+    CameraSystemData(SystemDataID id) : SystemData(id) {}
+    ~CameraSystemData() = default;
+
+    std::pair<EntityID, ComponentID> active;
+};
+
+struct CameraSystem : public System
+{
+    CameraSystem(SystemID id, SystemDataID data) : System(id, data)
+    {
+        type = SystemType::TICK;
+    }
+    ~CameraSystem() override = default;
+
+    void onAdd(ECS* ecs) override {}
+    void onRemove(ECS* ecs) override {}
+
+    void activate(ECS* ecs, EntityID entity, ComponentID camera)
+    {
+        auto* pData = ecs->getSystemData<CameraSystemData>(data);
+
+        pData->active = std::make_pair(entity, camera);
+    }
+
+    void onApply(ECS* ecs, EntityID entity) override
+    {
+        auto* pData = ecs->getSystemData<CameraSystemData>(data);
+
+        auto cameras = ecs->getComponent<CameraComponent>(entity);
+        for (auto* camera : cameras)
+        {
+            auto* transform = ecs->getComponent<TransformComponent>(entity, camera->transform);
+            glm::vec2 target = transform->position;
+            camera->offset = lerp(camera->offset, target, camera->speed);
+
+            if (std::make_pair(entity, camera->id) == pData->active)
+            {
+                glb.renderOffset = camera->offset;
+            }
+        }
+    }
+};
+
 struct ParallaxBackgroundComponent : public Component
 {
     ParallaxBackgroundComponent(ComponentID id, TextureID texture, int layers)
         : Component(id), texture(texture), layers(layers) {}
-    ~ParallaxBackgroundComponent() = default;
+    ~ParallaxBackgroundComponent() override = default;
 
     void onAdd(ECS* ecs, EntityID entity) override {}
     void onRemove(ECS* ecs, EntityID entity) override {}
@@ -566,7 +698,7 @@ struct ParallaxBackgroundSystem : public System
     {
         type = SystemType::DRAW;
     }
-    ~ParallaxBackgroundSystem() = default;
+    ~ParallaxBackgroundSystem() override = default;
 
     void onAdd(ECS* ecs) override 
     {
@@ -581,8 +713,6 @@ struct ParallaxBackgroundSystem : public System
 
     void onApply(ECS* ecs, EntityID entity) override 
     {
-        glb.renderOffset += glm::vec2(0.25f, 0.25f);  
-
         auto* pData = ecs->getSystemData<ParallaxBackgroundSystemData>(data);
 
         glUseProgram(pData->shader->program);
@@ -661,7 +791,7 @@ struct MouseSystem : public System
         for (auto* mouse : mice)
         {
             auto* transform = ecs->getComponent<TransformComponent>(entity, mouse->transform);
-            transform->position = glb.mousePosition;
+            transform->position = glb.mousePosition + glm::vec2(15.0f / 2.0f, -21.0f / 2.0f) - glb.renderOffset;
         }
     }
 };
@@ -670,17 +800,17 @@ struct MouseEntity : public Entity
 {
     MouseEntity(EntityID id, MouseType type)
         : Entity(id), type(type) {}
-    ~MouseEntity() = default;
+    ~MouseEntity() override = default;
 
     void onCreate(ECS* ecs) override
     {
         ecs->addSystem<MouseSystem>();
-        ComponentID transform = ecs->addComponent<TransformComponent>(id,
+        transform = ecs->addComponent<TransformComponent>(id,
             glb.mousePosition, 0.0f, glm::vec2(1.0f, 1.0f)
         );
-        ComponentID sampler = ecs->addComponent<TextureSamplerComponent>(id,
+        sampler = ecs->addComponent<TextureSamplerComponent>(id,
             transform, TextureID::GUI_ICONS, MeshID::QUAD_15x21, 
-            glm::vec2{15.0f, 21.0f}, glm::vec2{0.0f + (static_cast<int>(type) * 15.0f), 171.0f}, 
+            glm::vec2{15.0f, 21.0f}, glm::vec2{0.0f + (static_cast<int>(type) * 32.0f), 171.0f}, 
             false, false, true
         );
         ecs->addComponent<MouseComponent>(id, transform, sampler, type);
@@ -695,34 +825,38 @@ struct MouseEntity : public Entity
     void onRemove(ECS* ecs, ComponentID component) override {}
 
     MouseType type;
+    ComponentID transform;
+    ComponentID sampler;
 };
 
 struct MainMenuLevelEntity : public Entity
 {
     MainMenuLevelEntity(EntityID id)
         : Entity(id) {}
-    ~MainMenuLevelEntity() = default;
+    ~MainMenuLevelEntity() override = default;
 
     void onCreate(ECS* ecs) override
     {
-        ecs->addSystem<ParallaxBackgroundSystem, ParallaxBackgroundSystemData>();
-        ecs->addSystem<TextureSamplerSystem, TextureSamplerSystemData>();
-
         ecs->addComponent<ParallaxBackgroundComponent>(id,
             TextureID::BASEMENT_BACKGROUND,
             5
         );
 
-        ecs->createEntity<MouseEntity>(MouseType::SILVER);
+        MouseEntity* mouse = glb.ecs.getEntity<MouseEntity>(glb.mouse);
+        camera = glb.ecs.addComponent<CameraComponent>(glb.mouse, mouse->transform, 0.05f);
+        CameraSystem* cameraSystem = glb.ecs.getSystem<CameraSystem>(glb.cameraSystem);
+        cameraSystem->activate(&glb.ecs, glb.mouse, camera);
     }
         
     void onDestroy(ECS* ecs) override
     {
-        
+        ecs->removeComponent(glb.mouse, camera);
     }
 
     void onAdd(ECS* ecs, ComponentID component) override {}
     void onRemove(ECS* ecs, ComponentID component) override {}
+
+    ComponentID camera;
 };
 
 void init()
@@ -771,6 +905,12 @@ void init()
     glb.fontPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<FontID>>();
     glb.ecs.addComponent<FontComponent>(glb.fontPlaceHolder, "assets/CyberpunkCraftpixPixel.otf", 32);
 
+    glb.cameraSystem = glb.ecs.addSystem<CameraSystem, CameraSystemData>();
+    glb.ecs.addSystem<ParallaxBackgroundSystem, ParallaxBackgroundSystemData>();
+    glb.ecs.addSystem<TextureSamplerSystem, TextureSamplerSystemData>();
+
+    glb.mouse = glb.ecs.createEntity<MouseEntity>(MouseType::BLUE);
+
     glb.level = glb.ecs.createEntity<MainMenuLevelEntity>();
 }
 
@@ -805,8 +945,9 @@ void loop()
 
     int x, y;
     SDL_GetMouseState(&x, &y);
-    std::cout << x << " | " << y << std::endl;
-    glb.mousePosition = glm::vec2(static_cast<float>(x) - (glb.WINDOW_WIDTH / 4), static_cast<float>(y) + (glb.WINDOW_HEIGHT / 4));
+    glb.mousePosition = glm::vec2(x - glb.WINDOW_WIDTH / 2.0f, glb.WINDOW_HEIGHT / 2.0f - y);
+    glb.mousePosition /= glm::vec2(glb.WINDOW_WIDTH / glb.PIXEL_WIDTH, glb.WINDOW_HEIGHT / glb.PIXEL_HEIGHT);
+    glb.mousePosition += glb.renderOffset;
 
     glb.ecs.applySystems(SystemType::TICK);
 
