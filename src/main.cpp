@@ -26,16 +26,16 @@ enum class SystemType
 
 enum class SurfaceID
 {
-    GUI_FRAMES = 0,
-    GUI_ICONS = 1,
-    BASEMENT_BACKGROUND = 2
+    GUI_FRAMES,
+    GUI_ICONS,
+    BASEMENT_BACKGROUND
 };
 
 enum class TextureID
 {
-    GUI_FRAMES = 0,
-    GUI_ICONS = 1,
-    BASEMENT_BACKGROUND = 2
+    GUI_FRAMES,
+    GUI_ICONS,
+    BASEMENT_BACKGROUND
 };
 
 enum class ShaderID
@@ -47,6 +47,7 @@ enum class ShaderID
 
 enum class MeshID
 {
+    QUAD_15x21,
     QUAD_32x32,
     QUAD_640x360
 };
@@ -79,6 +80,7 @@ struct glb_t
     glm::vec2 renderOffset;
 
     std::map<SDL_Keycode, bool> keyboard;
+    glm::vec2 mousePosition;
 
     ECS ecs;
 
@@ -579,6 +581,8 @@ struct ParallaxBackgroundSystem : public System
 
     void onApply(ECS* ecs, EntityID entity) override 
     {
+        glb.renderOffset += glm::vec2(0.25f, 0.25f);  
+
         auto* pData = ecs->getSystemData<ParallaxBackgroundSystemData>(data);
 
         glUseProgram(pData->shader->program);
@@ -611,6 +615,88 @@ struct ParallaxBackgroundSystem : public System
     }                         
 };
 
+enum class MouseType
+{
+    SILVER,
+    BLUE,
+    RED,
+    GREEN
+};
+
+struct MouseComponent : public Component
+{
+    MouseComponent(ComponentID id, ComponentID transform, ComponentID sampler, MouseType type)
+        : Component(id), transform(transform), sampler(sampler), type(type) {}
+    ~MouseComponent() override = default;
+
+    void onAdd(ECS* ecs, EntityID entity) override {}
+    void onRemove(ECS* ecs, EntityID entity) override {}
+
+    ComponentID transform;
+    ComponentID sampler;
+    MouseType type;
+};
+
+struct MouseSystem : public System
+{
+    MouseSystem(SystemID id, SystemDataID data) : System(id, data)
+    {
+        type = SystemType::TICK;
+    }
+    ~MouseSystem() override = default;
+
+    void onAdd(ECS* ecs) override 
+    {
+        SDL_ShowCursor(false);
+    }
+    void onRemove(ECS* ecs) override 
+    {
+        SDL_ShowCursor(true);
+    }
+
+    void onApply(ECS* ecs, EntityID entity) override
+    {
+        auto mice = ecs->getComponent<MouseComponent>(entity);
+
+        for (auto* mouse : mice)
+        {
+            auto* transform = ecs->getComponent<TransformComponent>(entity, mouse->transform);
+            transform->position = glb.mousePosition;
+        }
+    }
+};
+
+struct MouseEntity : public Entity
+{
+    MouseEntity(EntityID id, MouseType type)
+        : Entity(id), type(type) {}
+    ~MouseEntity() = default;
+
+    void onCreate(ECS* ecs) override
+    {
+        ecs->addSystem<MouseSystem>();
+        ComponentID transform = ecs->addComponent<TransformComponent>(id,
+            glb.mousePosition, 0.0f, glm::vec2(1.0f, 1.0f)
+        );
+        ComponentID sampler = ecs->addComponent<TextureSamplerComponent>(id,
+            transform, TextureID::GUI_ICONS, MeshID::QUAD_15x21, 
+            glm::vec2{15.0f, 21.0f}, glm::vec2{0.0f + (static_cast<int>(type) * 15.0f), 171.0f}, 
+            false, false, true
+        );
+        ecs->addComponent<MouseComponent>(id, transform, sampler, type);
+    }
+        
+    void onDestroy(ECS* ecs) override
+    {
+        
+    }
+
+    void onAdd(ECS* ecs, ComponentID component) override {}
+    void onRemove(ECS* ecs, ComponentID component) override {}
+
+    MouseType type;
+};
+
 struct MainMenuLevelEntity : public Entity
 {
     MainMenuLevelEntity(EntityID id)
@@ -619,12 +705,17 @@ struct MainMenuLevelEntity : public Entity
 
     void onCreate(ECS* ecs) override
     {
+        ecs->addSystem<ParallaxBackgroundSystem, ParallaxBackgroundSystemData>();
+        ecs->addSystem<TextureSamplerSystem, TextureSamplerSystemData>();
+
         ecs->addComponent<ParallaxBackgroundComponent>(id,
             TextureID::BASEMENT_BACKGROUND,
             5
         );
-        ecs->addSystem<ParallaxBackgroundSystem, ParallaxBackgroundSystemData>();
+
+        ecs->createEntity<MouseEntity>(MouseType::SILVER);
     }
+        
     void onDestroy(ECS* ecs) override
     {
         
@@ -673,6 +764,7 @@ void init()
     glb.ecs.addComponent<ShaderComponent>(glb.shaderPlaceHolder, readFile("shaders/parallax_vertex.glsl"), readFile("shaders/parallax_fragment.glsl"));
 
     glb.meshPlaceHolder = glb.ecs.createEntity<PlaceHolderEntity<MeshID>>();
+    glb.ecs.addComponent<MeshComponent>(glb.meshPlaceHolder, MeshType::STATIC, glm::vec2{15.0f, 21.0f});
     glb.ecs.addComponent<MeshComponent>(glb.meshPlaceHolder, MeshType::STATIC, glm::vec2{32.0f, 32.0f});
     glb.ecs.addComponent<MeshComponent>(glb.meshPlaceHolder, MeshType::STATIC, glm::vec2{640.0f, 360.0f});
 
@@ -704,17 +796,17 @@ void loop()
                 glb.quit = true;
                 break;
             }
-            case SDL_KEYDOWN:
-            {
-                glb.quit = true;
-                break;
-            }
             default:
             {
                 break;
             }
         }
     }
+
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    std::cout << x << " | " << y << std::endl;
+    glb.mousePosition = glm::vec2(static_cast<float>(x) - (glb.WINDOW_WIDTH / 4), static_cast<float>(y) + (glb.WINDOW_HEIGHT / 4));
 
     glb.ecs.applySystems(SystemType::TICK);
 
